@@ -65,3 +65,9 @@ def ask_question(req: QuestionRequest):
     database.save_interaction(req.lecture_id, req.question, answer)
     
     return {"answer": answer}
+
+@app.get("/history/{lecture_id}")
+def get_lecture_history(lecture_id: int):
+    history = database.get_history(lecture_id)
+    
+    return [{"question": h[0], "answer": h[1]} for h in history]

@@ -1,10 +1,11 @@
 import streamlit as st
 import requests
+import utils 
 
 st.set_page_config(page_title="Smart Lecture Repository", layout="wide")
 
 st.title("Smart lecture repository")
-st.markdown("Your personal educational materials AI assistent")
+st.markdown("Your personal educational materials AI assistant")
 
 BASE_URL = "http://127.0.0.1:8000"
 
@@ -26,28 +27,42 @@ if lecture_titles:
         format_func=lambda x: lecture_titles[x]
     )
 else:
-    st.sidebar.info("Download the first lecture to get started.")
+    st.sidebar.info("Upload the first file to get started.")
     selected_lecture_id = None
 
 st.sidebar.divider()
+
 st.sidebar.subheader("Add new lecture")
-new_title = st.sidebar.text_input("Lecture title")
-new_content = st.sidebar.text_area("Lecture text", height=200)
+new_title = st.sidebar.text_input("Lecture title (how it will be saved)")
 
-if st.sidebar.button("Save to the database"):
-    if new_title and new_content:
-        payload = {"title": new_title, "content": new_content}
-        res = requests.post(f"{BASE_URL}/upload", json=payload)
-        if res.status_code == 200:
-            st.sidebar.success("The lecture has been saved!")
-            st.rerun()
+uploaded_file = st.sidebar.file_uploader(
+    "Choose a file", 
+    type=['pdf', 'docx', 'pptx', 'txt']
+)
+
+if st.sidebar.button("Process and Save"):
+    if new_title and uploaded_file:
+        with st.sidebar:
+            with st.spinner("Extracting text from file..."):
+                extracted_text = utils.extract_text(uploaded_file)
+                
+                if extracted_text:
+                    payload = {"title": new_title, "content": extracted_text}
+                    res = requests.post(f"{BASE_URL}/upload", json=payload)
+                    if res.status_code == 200:
+                        st.success(f"Saved! Extracted {len(extracted_text)} characters.")
+                        st.rerun()
+                    else:
+                        st.error("Failed to save to database.")
+                else:
+                    st.error("Could not extract text from this file.")
     else:
-        st.sidebar.warning("Fill in all the fields!")
+        st.sidebar.warning("Please provide a title and upload a file!")
 
+# Chat ---
 if selected_lecture_id:
     st.subheader(f"We are discussing: {lecture_titles[selected_lecture_id]}")
     
-    # Поле ввода вопроса
     user_question = st.chat_input("Ask a question about this lecture")
     
     if user_question:
@@ -64,12 +79,24 @@ if selected_lecture_id:
                 else:
                     st.error("Error when receiving the response.")
 else:
-    st.write("Start by uploading the lecture text in the left panel.")
+    st.write("👈 Start by uploading a lecture file in the left panel.")
 
+# Chat History 
 st.divider()
 st.subheader("Chat history")
-history = requests.get(f"{BASE_URL}/history/{selected_lecture_id}").json() 
+try:
+    history_res = requests.get(f"{BASE_URL}/history/{selected_lecture_id}")
+    if history_res.status_code == 200:
+        history = history_res.json()
+    else:
+        history = []
+except:
+    history = []
 
-for item in reversed(history):
-    with st.expander(f"Question: {item['question'][:50]}..."):
-        st.write(f"**Answer:** {item['answer']}")
+if isinstance(history, list) and len(history) > 0:
+    for item in reversed(history):
+        if isinstance(item, dict) and 'question' in item:
+            with st.expander(f"Question: {item['question'][:50]}..."):
+                st.write(f"**Answer:** {item.get('answer', 'No answer found')}")
+else:
+    st.info("No questions yet. Be the first to ask!")
