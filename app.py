@@ -51,11 +51,9 @@ if selected_lecture_id:
     user_question = st.chat_input("Ask a question about this lecture")
     
     if user_question:
-        # Отображаем вопрос пользователя
         with st.chat_message("user"):
             st.write(user_question)
             
-        # Отправляем вопрос на бэкенд
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 payload = {"lecture_id": selected_lecture_id, "question": user_question}

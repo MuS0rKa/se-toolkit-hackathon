@@ -64,6 +64,14 @@ def get_history(lecture_id):
     conn.close()
     return history
 
+def get_lecture_content(lecture_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT content FROM lectures WHERE id = ?", (lecture_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else None
+
 if __name__ == "__main__":
     init_db()
     print("База данных успешно инициализирована!")
