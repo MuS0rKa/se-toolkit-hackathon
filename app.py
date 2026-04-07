@@ -65,3 +65,11 @@ if selected_lecture_id:
                     st.error("Error when receiving the response.")
 else:
     st.write("Start by uploading the lecture text in the left panel.")
+
+st.divider()
+st.subheader("Chat history")
+history = requests.get(f"{BASE_URL}/history/{selected_lecture_id}").json() 
+
+for item in reversed(history):
+    with st.expander(f"Question: {item['question'][:50]}..."):
+        st.write(f"**Answer:** {item['answer']}")
