@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from pydantic import BaseModel
+import os
 import database
 import requests
 import json
@@ -14,7 +15,7 @@ database.init_db()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL")
 OPENROUTER_URL = os.getenv("OPENROUTER_BASE_URL")
-CONTENT_LIMIT = int(os.getenv("CONTENT_LIMIT", 10000))
+CONTENT_LIMIT = int(os.getenv("CONTENT_LIMIT"))
 
 class LectureCreate(BaseModel):
     title: str
