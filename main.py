@@ -1,16 +1,20 @@
 from fastapi import FastAPI, HTTPException
+from dotenv import load_dotenv
 from pydantic import BaseModel
 import database
 import requests
 import json
 import time
 
-app = FastAPI()
+load_dotenv()
 
+app = FastAPI()
 database.init_db()
 
-OPENROUTER_API_KEY = "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"
-OPENROUTER_MODEL = "qwen/qwen3.6-plus:free"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL")
+OPENROUTER_URL = os.getenv("OPENROUTER_BASE_URL")
+CONTENT_LIMIT = int(os.getenv("CONTENT_LIMIT", 10000))
 
 class LectureCreate(BaseModel):
     title: str
@@ -46,7 +50,7 @@ def ask_question(req: QuestionRequest):
 
     print(f"DEBUG: Отправка запроса в OpenRouter ({len(lecture_content)} симв.)")
 
-    truncated_content = lecture_content[:50000] if len(lecture_content) > 50000 else lecture_content
+    truncated_content = lecture_content[:CONTENT_LIMIT] if len(lecture_content) > CONTENT_LIMIT else lecture_content
 
     messages = [
         {
@@ -66,7 +70,7 @@ def ask_question(req: QuestionRequest):
 
         while retry_count <= max_retries:
             response = requests.post(
-                url="https://openrouter.ai/api/v1/chat/completions",
+                url=OPENROUTER_URL,
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                     "Content-Type": "application/json",
